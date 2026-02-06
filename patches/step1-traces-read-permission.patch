@@ -1,0 +1,699 @@
+diff --git a/web/src/__tests__/async/traces-trpc.servertest.ts b/web/src/__tests__/async/traces-trpc.servertest.ts
+index c5947f3dd..2637f8897 100644
+--- a/web/src/__tests__/async/traces-trpc.servertest.ts
++++ b/web/src/__tests__/async/traces-trpc.servertest.ts
+@@ -595,4 +595,394 @@ describe("traces trpc", () => {
+       }
+     });
+   });
++
++  describe("traces:read permission", () => {
++    it("should deny VIEWER role access to traces.all", async () => {
++      const viewerSession: Session = {
++        expires: "1",
++        user: {
++          id: "user-viewer",
++          canCreateOrganizations: false,
++          name: "Viewer User",
++          admin: false,
++          organizations: [
++            {
++              id: "seed-org-id",
++              name: "Test Organization",
++              role: "MEMBER",
++              plan: "cloud:hobby",
++              cloudConfig: undefined,
++              projects: [
++                {
++                  id: projectId,
++                  role: "VIEWER", // VIEWER lacks traces:read
++                  retentionDays: 30,
++                  deletedAt: null,
++                  name: "Test Project",
++                },
++              ],
++            },
++          ],
++          featureFlags: {
++            excludeClickhouseRead: false,
++            templateFlag: true,
++          },
++        },
++        environment: {} as any,
++      };
++
++      const viewerCtx = createInnerTRPCContext({ session: viewerSession });
++      const viewerCaller = appRouter.createCaller({ ...viewerCtx, prisma });
++
++      await expect(
++        viewerCaller.traces.all({
++          projectId,
++          filter: [],
++          searchQuery: null,
++          searchType: ["id"],
++          page: 0,
++          limit: 50,
++          orderBy: {
++            column: "timestamp",
++            order: "DESC",
++          },
++        }),
++      ).rejects.toMatchObject({
++        code: "FORBIDDEN",
++      });
++    });
++
++    it("should deny VIEWER role access to traces.byId", async () => {
++      const trace = createTrace({
++        project_id: projectId,
++      });
++
++      await createTracesCh([trace]);
++
++      const viewerSession: Session = {
++        expires: "1",
++        user: {
++          id: "user-viewer",
++          canCreateOrganizations: false,
++          name: "Viewer User",
++          admin: false,
++          organizations: [
++            {
++              id: "seed-org-id",
++              name: "Test Organization",
++              role: "MEMBER",
++              plan: "cloud:hobby",
++              cloudConfig: undefined,
++              projects: [
++                {
++                  id: projectId,
++                  role: "VIEWER", // VIEWER lacks traces:read
++                  retentionDays: 30,
++                  deletedAt: null,
++                  name: "Test Project",
++                },
++              ],
++            },
++          ],
++          featureFlags: {
++            excludeClickhouseRead: false,
++            templateFlag: true,
++          },
++        },
++        environment: {} as any,
++      };
++
++      const viewerCtx = createInnerTRPCContext({ session: viewerSession });
++      const viewerCaller = appRouter.createCaller({ ...viewerCtx, prisma });
++
++      await expect(
++        viewerCaller.traces.byId({
++          projectId,
++          traceId: trace.id,
++        }),
++      ).rejects.toMatchObject({
++        code: "FORBIDDEN",
++      });
++    });
++
++    it("should deny VIEWER role access to traces.countAll", async () => {
++      const viewerSession: Session = {
++        expires: "1",
++        user: {
++          id: "user-viewer",
++          canCreateOrganizations: false,
++          name: "Viewer User",
++          admin: false,
++          organizations: [
++            {
++              id: "seed-org-id",
++              name: "Test Organization",
++              role: "MEMBER",
++              plan: "cloud:hobby",
++              cloudConfig: undefined,
++              projects: [
++                {
++                  id: projectId,
++                  role: "VIEWER", // VIEWER lacks traces:read
++                  retentionDays: 30,
++                  deletedAt: null,
++                  name: "Test Project",
++                },
++              ],
++            },
++          ],
++          featureFlags: {
++            excludeClickhouseRead: false,
++            templateFlag: true,
++          },
++        },
++        environment: {} as any,
++      };
++
++      const viewerCtx = createInnerTRPCContext({ session: viewerSession });
++      const viewerCaller = appRouter.createCaller({ ...viewerCtx, prisma });
++
++      await expect(
++        viewerCaller.traces.countAll({
++          projectId,
++          filter: [],
++          searchQuery: null,
++          searchType: ["id"],
++          page: 0,
++          limit: 50,
++          orderBy: {
++            column: "timestamp",
++            order: "DESC",
++          },
++        }),
++      ).rejects.toMatchObject({
++        code: "FORBIDDEN",
++      });
++    });
++
++    it("should deny MEMBER role access to traces.all", async () => {
++      const memberSession: Session = {
++        expires: "1",
++        user: {
++          id: "user-member",
++          canCreateOrganizations: false,
++          name: "Member User",
++          admin: false,
++          organizations: [
++            {
++              id: "seed-org-id",
++              name: "Test Organization",
++              role: "MEMBER",
++              plan: "cloud:hobby",
++              cloudConfig: undefined,
++              projects: [
++                {
++                  id: projectId,
++                  role: "MEMBER", // MEMBER lacks traces:read
++                  retentionDays: 30,
++                  deletedAt: null,
++                  name: "Test Project",
++                },
++              ],
++            },
++          ],
++          featureFlags: {
++            excludeClickhouseRead: false,
++            templateFlag: true,
++          },
++        },
++        environment: {} as any,
++      };
++
++      const memberCtx = createInnerTRPCContext({ session: memberSession });
++      const memberCaller = appRouter.createCaller({ ...memberCtx, prisma });
++
++      await expect(
++        memberCaller.traces.all({
++          projectId,
++          filter: [],
++          searchQuery: null,
++          searchType: ["id"],
++          page: 0,
++          limit: 50,
++          orderBy: {
++            column: "timestamp",
++            order: "DESC",
++          },
++        }),
++      ).rejects.toMatchObject({
++        code: "FORBIDDEN",
++      });
++    });
++
++    it("should deny MEMBER role access to traces.byId", async () => {
++      const trace = createTrace({
++        project_id: projectId,
++      });
++
++      await createTracesCh([trace]);
++
++      const memberSession: Session = {
++        expires: "1",
++        user: {
++          id: "user-member",
++          canCreateOrganizations: false,
++          name: "Member User",
++          admin: false,
++          organizations: [
++            {
++              id: "seed-org-id",
++              name: "Test Organization",
++              role: "MEMBER",
++              plan: "cloud:hobby",
++              cloudConfig: undefined,
++              projects: [
++                {
++                  id: projectId,
++                  role: "MEMBER", // MEMBER lacks traces:read
++                  retentionDays: 30,
++                  deletedAt: null,
++                  name: "Test Project",
++                },
++              ],
++            },
++          ],
++          featureFlags: {
++            excludeClickhouseRead: false,
++            templateFlag: true,
++          },
++        },
++        environment: {} as any,
++      };
++
++      const memberCtx = createInnerTRPCContext({ session: memberSession });
++      const memberCaller = appRouter.createCaller({ ...memberCtx, prisma });
++
++      await expect(
++        memberCaller.traces.byId({
++          projectId,
++          traceId: trace.id,
++        }),
++      ).rejects.toMatchObject({
++        code: "FORBIDDEN",
++      });
++    });
++
++    it("should allow ADMIN role access to traces.all", async () => {
++      const trace = createTrace({
++        project_id: projectId,
++      });
++
++      await createTracesCh([trace]);
++
++      const adminSession: Session = {
++        expires: "1",
++        user: {
++          id: "user-admin",
++          canCreateOrganizations: false,
++          name: "Admin User",
++          admin: false,
++          organizations: [
++            {
++              id: "seed-org-id",
++              name: "Test Organization",
++              role: "ADMIN",
++              plan: "cloud:hobby",
++              cloudConfig: undefined,
++              projects: [
++                {
++                  id: projectId,
++                  role: "ADMIN", // ADMIN has traces:read
++                  retentionDays: 30,
++                  deletedAt: null,
++                  name: "Test Project",
++                },
++              ],
++            },
++          ],
++          featureFlags: {
++            excludeClickhouseRead: false,
++            templateFlag: true,
++          },
++        },
++        environment: {} as any,
++      };
++
++      const adminCtx = createInnerTRPCContext({ session: adminSession });
++      const adminCaller = appRouter.createCaller({ ...adminCtx, prisma });
++
++      const traces = await adminCaller.traces.all({
++        projectId,
++        filter: [
++          {
++            column: "timestamp",
++            type: "datetime",
++            operator: ">=",
++            value: new Date(new Date().getTime() - 1000).toISOString(),
++          },
++        ],
++        searchQuery: null,
++        searchType: ["id"],
++        page: 0,
++        limit: 50,
++        orderBy: {
++          column: "timestamp",
++          order: "DESC",
++        },
++      });
++
++      expect(traces.traces).toBeDefined();
++    });
++
++    it("should allow ADMIN role access to traces.byId", async () => {
++      const trace = createTrace({
++        project_id: projectId,
++      });
++
++      await createTracesCh([trace]);
++
++      const adminSession: Session = {
++        expires: "1",
++        user: {
++          id: "user-admin",
++          canCreateOrganizations: false,
++          name: "Admin User",
++          admin: false,
++          organizations: [
++            {
++              id: "seed-org-id",
++              name: "Test Organization",
++              role: "ADMIN",
++              plan: "cloud:hobby",
++              cloudConfig: undefined,
++              projects: [
++                {
++                  id: projectId,
++                  role: "ADMIN", // ADMIN has traces:read
++                  retentionDays: 30,
++                  deletedAt: null,
++                  name: "Test Project",
++                },
++              ],
++            },
++          ],
++          featureFlags: {
++            excludeClickhouseRead: false,
++            templateFlag: true,
++          },
++        },
++        environment: {} as any,
++      };
++
++      const adminCtx = createInnerTRPCContext({ session: adminSession });
++      const adminCaller = appRouter.createCaller({ ...adminCtx, prisma });
++
++      const traceRes = await adminCaller.traces.byId({
++        projectId,
++        traceId: trace.id,
++      });
++
++      expect(traceRes?.id).toEqual(trace.id);
++    });
++  });
+ });
+diff --git a/web/src/features/navigation/utils/tracing-tabs.ts b/web/src/features/navigation/utils/tracing-tabs.ts
+index db1c30598..0d11d698d 100644
+--- a/web/src/features/navigation/utils/tracing-tabs.ts
++++ b/web/src/features/navigation/utils/tracing-tabs.ts
+@@ -5,15 +5,29 @@ export const TRACING_TABS = {
+ 
+ export type TracingTab = (typeof TRACING_TABS)[keyof typeof TRACING_TABS];
+ 
+-export const getTracingTabs = (projectId: string) => [
+-  {
+-    value: TRACING_TABS.TRACES,
+-    label: "Traces",
+-    href: `/project/${projectId}/traces`,
+-  },
+-  {
++export const getTracingTabs = (
++  projectId: string,
++  hasTracesReadAccess: boolean = true,
++) => {
++  const tabs: Array<{
++    value: TracingTab;
++    label: string;
++    href: string;
++  }> = [];
++
++  if (hasTracesReadAccess) {
++    tabs.push({
++      value: TRACING_TABS.TRACES,
++      label: "Traces",
++      href: `/project/${projectId}/traces`,
++    });
++  }
++
++  tabs.push({
+     value: TRACING_TABS.OBSERVATIONS,
+     label: "Observations",
+     href: `/project/${projectId}/observations`,
+-  },
+-];
++  });
++
++  return tabs;
++};
+diff --git a/web/src/features/rbac/constants/projectAccessRights.ts b/web/src/features/rbac/constants/projectAccessRights.ts
+index a69a470e6..db6547a43 100644
+--- a/web/src/features/rbac/constants/projectAccessRights.ts
++++ b/web/src/features/rbac/constants/projectAccessRights.ts
+@@ -13,6 +13,7 @@ export const projectScopes = [
+   "objects:bookmark",
+   "objects:tag",
+ 
++  "traces:read",
+   "traces:delete",
+ 
+   "scores:CUD",
+@@ -95,6 +96,7 @@ export const projectRoleAccessRights: Record<Role, ProjectScope[]> = {
+     "objects:publish",
+     "objects:bookmark",
+     "objects:tag",
++    "traces:read",
+     "traces:delete",
+     "scores:CUD",
+     "scoreConfigs:CUD",
+@@ -148,6 +150,7 @@ export const projectRoleAccessRights: Record<Role, ProjectScope[]> = {
+     "objects:publish",
+     "objects:bookmark",
+     "objects:tag",
++    "traces:read",
+     "traces:delete",
+     "scores:CUD",
+     "scoreConfigs:CUD",
+diff --git a/web/src/pages/project/[projectId]/observations.tsx b/web/src/pages/project/[projectId]/observations.tsx
+index b09edf9d5..5b97b7068 100644
+--- a/web/src/pages/project/[projectId]/observations.tsx
++++ b/web/src/pages/project/[projectId]/observations.tsx
+@@ -10,11 +10,16 @@ import {
+ } from "@/src/features/navigation/utils/tracing-tabs";
+ import { useV4Beta } from "@/src/features/events/hooks/useV4Beta";
+ import ObservationsEventsTable from "@/src/features/events/components/EventsTable";
++import { useHasProjectAccess } from "@/src/features/rbac/utils/checkProjectAccess";
+ 
+ export default function Generations() {
+   const router = useRouter();
+   const projectId = router.query.projectId as string;
+   const { isBetaEnabled } = useV4Beta();
++  const hasTracesReadAccess = useHasProjectAccess({
++    projectId,
++    scope: "traces:read",
++  });
+ 
+   // Check if the user has tracing configured
+   const { data: hasTracingConfigured, isLoading } =
+@@ -45,7 +50,7 @@ export default function Generations() {
+         tabsProps: isBetaEnabled
+           ? undefined
+           : {
+-              tabs: getTracingTabs(projectId),
++              tabs: getTracingTabs(projectId, hasTracesReadAccess),
+               activeTab: TRACING_TABS.OBSERVATIONS,
+             },
+       }}
+diff --git a/web/src/pages/project/[projectId]/observations/new.tsx b/web/src/pages/project/[projectId]/observations/new.tsx
+index 395626ba5..1c23db4eb 100644
+--- a/web/src/pages/project/[projectId]/observations/new.tsx
++++ b/web/src/pages/project/[projectId]/observations/new.tsx
+@@ -8,10 +8,15 @@ import {
+   getTracingTabs,
+   TRACING_TABS,
+ } from "@/src/features/navigation/utils/tracing-tabs";
++import { useHasProjectAccess } from "@/src/features/rbac/utils/checkProjectAccess";
+ 
+ export default function Events() {
+   const router = useRouter();
+   const projectId = router.query.projectId as string;
++  const hasTracesReadAccess = useHasProjectAccess({
++    projectId,
++    scope: "traces:read",
++  });
+ 
+   // Check if the user has tracing configured
+   const { data: hasTracingConfigured, isLoading } =
+@@ -40,7 +45,7 @@ export default function Events() {
+           href: "https://langfuse.com/docs/observability/data-model",
+         },
+         tabsProps: {
+-          tabs: getTracingTabs(projectId),
++          tabs: getTracingTabs(projectId, hasTracesReadAccess),
+           activeTab: TRACING_TABS.OBSERVATIONS,
+         },
+       }}
+diff --git a/web/src/pages/project/[projectId]/traces.tsx b/web/src/pages/project/[projectId]/traces.tsx
+index fb415bc95..a9e424ce5 100644
+--- a/web/src/pages/project/[projectId]/traces.tsx
++++ b/web/src/pages/project/[projectId]/traces.tsx
+@@ -11,12 +11,18 @@ import {
+ } from "@/src/features/navigation/utils/tracing-tabs";
+ import { useV4Beta } from "@/src/features/events/hooks/useV4Beta";
+ import ObservationsEventsTable from "@/src/features/events/components/EventsTable";
++import { useHasProjectAccess } from "@/src/features/rbac/utils/checkProjectAccess";
++import { Alert, AlertDescription, AlertTitle } from "@/src/components/ui/alert";
+ 
+ export default function Traces() {
+   const router = useRouter();
+   const projectId = router.query.projectId as string;
+   const { isBetaEnabled } = useV4Beta();
+   const [, setQueryParams] = useQueryParams({ viewMode: StringParam });
++  const hasTracesReadAccess = useHasProjectAccess({
++    projectId,
++    scope: "traces:read",
++  });
+ 
+   // Clear viewMode query when beta is turned off (e.g. from sidebar)
+   useEffect(() => {
+@@ -60,6 +66,29 @@ export default function Traces() {
+     );
+   }
+ 
++  if (!hasTracesReadAccess) {
++    return (
++      <Page
++        headerProps={{
++          title: "Tracing",
++          help: {
++            description:
++              "A trace represents a single function/api invocation. Traces contain observations. See docs to learn more.",
++            href: "https://langfuse.com/docs/observability/data-model",
++          },
++        }}
++        scrollable
++      >
++        <Alert>
++          <AlertTitle>Access Denied</AlertTitle>
++          <AlertDescription>
++            You do not have permission to view traces.
++          </AlertDescription>
++        </Alert>
++      </Page>
++    );
++  }
++
+   return (
+     <Page
+       headerProps={{
+@@ -72,7 +101,7 @@ export default function Traces() {
+         tabsProps: isBetaEnabled
+           ? undefined
+           : {
+-              tabs: getTracingTabs(projectId),
++              tabs: getTracingTabs(projectId, hasTracesReadAccess),
+               activeTab: TRACING_TABS.TRACES,
+             },
+       }}
+diff --git a/web/src/server/api/routers/traces.ts b/web/src/server/api/routers/traces.ts
+index 8b75f6c02..a27f318e2 100644
+--- a/web/src/server/api/routers/traces.ts
++++ b/web/src/server/api/routers/traces.ts
+@@ -96,9 +96,9 @@ export const traceRouter = createTRPCRouter({
+         projectId: z.string(),
+       }),
+     )
+-    .query(async ({ input, ctx }) => {
++    .query(async ({ ctx }) => {
+       // Check if there are any traces in the database
+-      const hasTraces = await hasAnyTrace(input.projectId);
++      const hasTraces = await hasAnyTrace(ctx.session.projectId);
+ 
+       if (hasTraces) {
+         return true;
+@@ -108,7 +108,7 @@ export const traceRouter = createTRPCRouter({
+       // This indicates the user has configured tracing even if data retention cleaned all traces
+       const project = await ctx.prisma.project.findUnique({
+         where: {
+-          id: input.projectId,
++          id: ctx.session.projectId,
+         },
+         select: {
+           retentionDays: true,
+@@ -120,6 +120,12 @@ export const traceRouter = createTRPCRouter({
+   all: protectedProjectProcedure
+     .input(TraceFilterOptions)
+     .query(async ({ input, ctx }) => {
++      throwIfNoProjectAccess({
++        session: ctx.session,
++        projectId: input.projectId,
++        scope: "traces:read",
++      });
++
+       const { filterState, hasNoMatches } = await applyCommentFilters({
+         filterState: input.filter ?? [],
+         prisma: ctx.prisma,
+@@ -145,6 +151,12 @@ export const traceRouter = createTRPCRouter({
+   countAll: protectedProjectProcedure
+     .input(TraceFilterOptions)
+     .query(async ({ input, ctx }) => {
++      throwIfNoProjectAccess({
++        session: ctx.session,
++        projectId: input.projectId,
++        scope: "traces:read",
++      });
++
+       const { filterState, hasNoMatches } = await applyCommentFilters({
+         filterState: input.filter ?? [],
+         prisma: ctx.prisma,
+@@ -178,6 +190,12 @@ export const traceRouter = createTRPCRouter({
+       }),
+     )
+     .query(async ({ input, ctx }) => {
++      throwIfNoProjectAccess({
++        session: ctx.session,
++        projectId: input.projectId,
++        scope: "traces:read",
++      });
++
+       if (input.traceIds.length === 0) return [];
+ 
+       const { filterState, hasNoMatches, matchingIds } =
+@@ -257,7 +275,13 @@ export const traceRouter = createTRPCRouter({
+         timestampFilter: z.array(timeFilter).optional(),
+       }),
+     )
+-    .query(async ({ input }) => {
++    .query(async ({ input, ctx }) => {
++      throwIfNoProjectAccess({
++        session: ctx.session,
++        projectId: input.projectId,
++        scope: "traces:read",
++      });
++
+       const { timestampFilter } = input;
+ 
+       const [
+diff --git a/web/src/server/api/trpc.ts b/web/src/server/api/trpc.ts
+index 644fe273f..80bc17cbd 100644
+--- a/web/src/server/api/trpc.ts
++++ b/web/src/server/api/trpc.ts
+@@ -19,6 +19,7 @@ import { type Session } from "next-auth";
+ import { tracing } from "@baselime/trpc-opentelemetry-middleware";
+ import { getServerAuthSession } from "@/src/server/auth";
+ import { prisma, Role } from "@langfuse/shared/src/db";
++import { throwIfNoProjectAccess } from "@/src/features/rbac/utils/checkProjectAccess";
+ import * as z from "zod/v4";
+ import * as opentelemetry from "@opentelemetry/api";
+ import { type IncomingHttpHeaders } from "node:http";
+@@ -482,6 +483,16 @@ const enforceTraceAccess = t.middleware(async (opts) => {
+         "User is not a member of this project and this trace is not public",
+     });
+   }
++
++  // Check if user has traces:read permission (skip for public traces/sessions and admin users)
++  if (sessionProject && !trace.public && !isSessionPublic) {
++    throwIfNoProjectAccess({
++      session: ctx.session,
++      projectId,
++      scope: "traces:read",
++    });
++  }
++
+   return next({
+     ctx: {
+       session: {
